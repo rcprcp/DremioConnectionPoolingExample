@@ -18,11 +18,22 @@ git clone https://github.com/rcprcp/DremioConnectionPoolingExample.git
 cd DremioConnectionPoolingExample
 mvn clean package 
 ```
-Run the program
+Run the program:
 ```shell
-java -jar target/DremioConnectionPoolingExample-1.0-SNAPSHOT-jar-with-dependencies.jar -c 5 
+java --illegal-access=warn -jar target/DremioConnectionPoolingExample-1.0-SNAPSHOT-jar-with-dependencies.jar -c 5 
 ```
 --connections or -c to set the number of JDBC connections. 
+
+If you set the connections to be less than the nu,ber of threads, some threads will wait for db connections from the Hikari Pool.  
+For example, if you set `-c 2 -t 7` you might see output like this: 
+```shell
+2023-01-24 16:57:32.087 [INFO ] [Thread-0] DremioConnectionPoolingExample - Thread-0 -  30000 records 14 records per ms.  pickup_datetime 2013-05-31 18:32:00.0
+2023-01-24 16:57:33.189 [INFO ] [Thread-4] DremioConnectionPoolingExample - Thread-4 -  30000 records 10 records per ms.  pickup_datetime 2014-02-26 23:43:00.0
+2023-01-24 16:57:34.165 [INFO ] [Thread-0] DremioConnectionPoolingExample - Thread-0 -  60000 records 14 records per ms.  pickup_datetime 2014-02-26 23:13:00.0
+2023-01-24 16:57:36.566 [INFO ] [Thread-4] DremioConnectionPoolingExample - Thread-4 -  60000 records 9 records per ms.  pickup_datetime 2014-02-27 04:00:00.0
+2023-01-24 16:57:36.749 [INFO ] [Thread-0] DremioConnectionPoolingExample - Thread-0 -  90000 records 13 records per ms.  pickup_datetime 2014-02-26 20:08:00.0
+```
+In which thread 0 and 4 have the 2 connections, the other 5 threads are waiting. 
 
 ## Todo list - 
 - [ ] test with the Arrow-Flight driver, instead of the legacy driver. 

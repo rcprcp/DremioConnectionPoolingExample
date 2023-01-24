@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2022 Dremio Corporation
+ * Copyright (C) 2022 Dremio Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,21 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
 import java.util.Collections;
+import java.util.ServiceLoader;
 
 public class DremioConnectionPoolingExample {
+  private static final Logger LOG = LogManager.getLogger(DremioConnectionPoolingExample.class);
   @Parameter(names = {"--connections", "-c"})
   int connections = 5;
 
   @Parameter(names = {"--threads", "-t"})
   int threads = connections;
+
   public static void main(String... args) {
 
     DremioConnectionPoolingExample dcpe = new DremioConnectionPoolingExample();
@@ -40,16 +45,35 @@ public class DremioConnectionPoolingExample {
   }
 
   void run() {
-    System.out.println("connections: " + connections);
+    LOG.info("connections: {}", connections);
 
-    final String jdbcUrl = "jdbc:dremio:direct=automaster:31010;schema=Samples.samples.dremio.com;";
-    final String arrowFlightURL = "jdbc:arrow-flight-sql://automaster:32010/?useEncryption=false?schema=Samples.samples.dremio.com;";
-    System.out.println("Currently Registered JDBC drivers:");
+    final String jdbcUrl = "jdbc:dremio:direct=automaster.drem.io:31010;schema=Samples.samples.dremio.com;";
+    final String arrowFlightURL = "jdbc:arrow-flight-sql://automaster.drem.io:32010/?useEncryption=false&schema=Samples.samples.dremio.com;";
+
 
     // just to verify - print the available JDBC Drivers.
-    Collections.list(DriverManager.getDrivers()).forEach(driver -> {
-      System.out.println(String.format("Driver class %s (version %s.%s)", driver.getClass().getName(), driver.getMajorVersion(), driver.getMinorVersion()));
-    });
+    LOG.info("Currently Registered JDBC drivers:");
+    try {
+      Collections.list(DriverManager.getDrivers()).forEach(driver -> {
+        LOG.info("Driver class {} (version {}.{})", driver.getClass().getName(), driver.getMajorVersion(), driver.getMinorVersion());
+      });
+    } catch (Exception ex) {
+      LOG.error("Exception: {}", ex.getMessage(), ex);
+      System.exit(4);
+    }
+
+    try {
+      Class.forName("org.apache.arrow.driver.jdbc.ArrowFlightJdbcDriver");
+      Class.forName("org.postgresql.Driver");
+    } catch (ClassNotFoundException ex) {
+      LOG.error("Exception: {}", ex.getMessage(), ex);
+      System.exit(4);
+    }
+
+    ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
+    for (Driver driver : loadedDrivers) {
+      LOG.error("second try. Driver class {} (version {}.{})", driver.getClass().getName(), driver.getMajorVersion(), driver.getMinorVersion());
+    }
 
     // create a connection pool.
     HikariConfig config = new HikariConfig();
@@ -74,13 +98,13 @@ public class DremioConnectionPoolingExample {
     HikariDataSource hikariPool;
 
     WorkerThread(HikariDataSource hikariPool) {
-      System.out.println("create WorkerThread");
+      LOG.info("create WorkerThread");
 
       this.hikariPool = hikariPool;
     }
 
     public void run() {
-      System.out.println("start WorkerThread");
+      LOG.info("start WorkerThread");
 
       try {
         Connection conn = hikariPool.getConnection();
@@ -94,20 +118,18 @@ public class DremioConnectionPoolingExample {
         while (rs.next()) {
           i++;
           if (i % 30000 == 0) {
-            System.out.println(String.format("%s -  %d records %d records per ms.  pickup_datetime %s",
-                    Thread.currentThread().getName(), i, i / (System.currentTimeMillis() - startTime), rs.getString("pickup_datetime")));
+            LOG.info("{} -  {} records {} records per ms.  pickup_datetime {}", Thread.currentThread().getName(), i, i / (System.currentTimeMillis() - startTime), rs.getString("pickup_datetime"));
           }
         }
-        System.out.println(String.format("%s read %d records in %d ms.",
-                Thread.currentThread().getName(), i, System.currentTimeMillis() - startTime));
+        LOG.info("{} read {} records in {} ms.", Thread.currentThread().getName(), i, System.currentTimeMillis() - startTime);
 
         rs.close();
         stmt.close();
         conn.close();
 
       } catch (SQLException ex) {
-        System.out.println("SQLException: " + ex.getMessage());
-        ex.printStackTrace();
+        LOG.error("SQLException: {}", ex.getMessage(), ex);
+        System.exit(5);
       }
     }
   }
