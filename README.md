@@ -23,6 +23,7 @@ Run the program:
 java --illegal-access=warn -jar target/DremioConnectionPoolingExample-1.0-SNAPSHOT-jar-with-dependencies.jar -c 5 
 ```
 --connections or -c to set the number of JDBC connections. 
+--threads or -t to set the number of worker threads.
 
 If you set the connections to be less than the nu,ber of threads, some threads will wait for db connections from the Hikari Pool.  
 For example, if you set `-c 2 -t 7` you might see output like this: 
