@@ -118,7 +118,7 @@ public class DremioConnectionPoolingExample {
         while (rs.next()) {
           i++;
           if (i % 30000 == 0) {
-            LOG.info("{} -  {} records {} records per ms.  pickup_datetime {}", Thread.currentThread().getName(), i, i / (System.currentTimeMillis() - startTime), rs.getString("pickup_datetime"));
+            LOG.info("{} records {} records per ms.  pickup_datetime {}", i, i / (System.currentTimeMillis() - startTime), rs.getString("pickup_datetime"));
           }
         }
         LOG.info("{} read {} records in {} ms.", Thread.currentThread().getName(), i, System.currentTimeMillis() - startTime);
