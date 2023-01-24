@@ -26,7 +26,7 @@ java --illegal-access=warn -jar target/DremioConnectionPoolingExample-1.0-SNAPSH
 
 --threads or -t to set the number of worker threads.
 
-If you set the connections to be less than the nu,ber of threads, some threads will wait for db connections from the Hikari Pool.  
+If you set the connections to be less than the number of threads, some threads will wait for db connections from the Hikari Pool.  
 For example, if you set `-c 2 -t 7` you might see output like this: 
 ```shell
 2023-01-24 16:57:32.087 [INFO ] [Thread-0] DremioConnectionPoolingExample - Thread-0 -  30000 records 14 records per ms.  pickup_datetime 2013-05-31 18:32:00.0
