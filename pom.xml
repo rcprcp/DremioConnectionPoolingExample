@@ -39,16 +39,23 @@
 
     <dependencies>
 
+        <!--
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>flight-sql-jdbc-driver</artifactId>
             <version>${arrow.flight.driver.version}</version>
         </dependency>
+-->
+        <dependency>
+            <groupId>com.dremio</groupId>
+            <artifactId>jdbc-driver</artifactId>
+            <version>24.0.0</version>
+        </dependency>
 
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>4.0.3</version>   <!-- for Java 8 -->
+            <version>6.2.1</version>
         </dependency>
 
         <dependency>

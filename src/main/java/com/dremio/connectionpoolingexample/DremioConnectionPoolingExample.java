@@ -25,6 +25,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,8 +37,16 @@ public class DremioConnectionPoolingExample {
   @Parameter(names = {"--connections", "-c"})
   int connections = 1;
 
+
+
   @Parameter(names = {"--host", "-h"})
   String host = "";
+
+  @Parameter(names = {"--user", "-u"})
+  String user = "";
+
+  @Parameter(names = {"--password", "-a"})
+  String password = "";
 
   @Parameter(names = {"--port", "-p"})
   int port = 0;
@@ -56,9 +67,18 @@ public class DremioConnectionPoolingExample {
 
   void run() {
 
-    final String arrowFlightURL =
-        String.format("jdbc:arrow-flight-sql://%s:%d/?useEncryption=false", host, port);
-    LOG.info(arrowFlightURL);
+    Map<String, String> props = System.getenv();
+
+    for(Map.Entry<String, String> ent : props.entrySet()) {
+      System.out.println(ent.getKey() + " = " + ent.getValue());
+    }
+
+
+//    final String arrowFlightURL =
+//            String.format("jdbc:arrow-flight-sql://%s:%d/?useEncryption=false", host, port);
+//    LOG.info(arrowFlightURL);
+    final String jdbcURL =  String.format("jdbc:dremio:direct=%s:%d", host, port);
+    LOG.info(jdbcURL);
 
     // just to verify - print the available JDBC Drivers.
     LOG.info("Registered JDBC drivers:");
@@ -78,10 +98,10 @@ public class DremioConnectionPoolingExample {
 
     HikariConfig config = new HikariConfig();
 
-    config.setJdbcUrl(arrowFlightURL);
+    config.setJdbcUrl(jdbcURL);
 
-    config.setUsername(System.getenv("DREMIO_USER"));
-    config.setPassword(System.getenv("DREMIO_PASSWORD"));
+    config.setUsername(user);
+    config.setPassword(password);
     config.setMaximumPoolSize(connections);
     HikariDataSource ds = new HikariDataSource(config);
 
@@ -99,7 +119,6 @@ public class DremioConnectionPoolingExample {
       this.hikariPool = hikariPool;
     }
 
-    // invoked on thread.start()
     public void run() {
 
       try {
